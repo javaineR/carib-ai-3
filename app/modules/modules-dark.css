@@ -1,0 +1,54 @@
+/* Dark background text styling */
+.modules-dark-bg {
+  --text-primary: #ffffff;
+  --text-secondary: #e1e1e1;
+  --text-muted: #a1a1a1;
+  --bg-card: rgba(42, 42, 42, 0.75);
+  --bg-card-hover: rgba(52, 52, 52, 0.8);
+  --border-color: rgba(80, 80, 80, 0.5);
+}
+
+.modules-dark-bg h1,
+.modules-dark-bg h2,
+.modules-dark-bg h3,
+.modules-dark-bg h4,
+.modules-dark-bg h5,
+.modules-dark-bg h6 {
+  color: var(--text-primary);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.modules-dark-bg p,
+.modules-dark-bg li,
+.modules-dark-bg span:not([class*="text-"]) {
+  color: var(--text-secondary);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.modules-dark-bg .muted-text {
+  color: var(--text-muted);
+}
+
+.modules-dark-bg .card-dark {
+  background-color: var(--bg-card);
+  backdrop-filter: blur(8px);
+  border-color: var(--border-color);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.modules-dark-bg .card-dark:hover {
+  background-color: var(--bg-card-hover);
+}
+
+.modules-dark-bg .accordion-dark {
+  background-color: var(--bg-card);
+  border-color: var(--border-color);
+}
+
+.modules-dark-bg .accordion-item-dark {
+  border-color: var(--border-color);
+}
+
+.modules-dark-bg .accordion-item-dark:hover {
+  background-color: var(--bg-card-hover);
+} 

@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Background Generator</title>
+  <style>
+    body { margin: 0; padding: 0; }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+  <canvas id="backgroundCanvas" width="1920" height="1080"></canvas>
+  <script>
+    const canvas = document.getElementById('backgroundCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    // Create a radial gradient similar to the image shared
+    const gradient = ctx.createRadialGradient(
+      canvas.width / 2, canvas.height / 2, 0,
+      canvas.width / 2, canvas.height / 2, canvas.width * 0.7
+    );
+    
+    // Add color stops to match the dark abstract design
+    gradient.addColorStop(0, '#171717');
+    gradient.addColorStop(0.3, '#1a1a1a');
+    gradient.addColorStop(0.6, '#252525');
+    gradient.addColorStop(0.9, '#0e0e0e');
+    
+    // Fill with gradient
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Add flowing lines similar to the image
+    const lines = 70;
+    
+    for (let i = 0; i < lines; i++) {
+      ctx.beginPath();
+      ctx.strokeStyle = `rgba(120, 30, 30, ${Math.random() * 0.4 + 0.1})`;
+      ctx.lineWidth = Math.random() * 2 + 0.5;
+      
+      // Start point
+      let x = Math.random() * canvas.width;
+      let y = Math.random() * canvas.height;
+      
+      ctx.moveTo(x, y);
+      
+      // Create flowing curve
+      for (let j = 0; j < 3; j++) {
+        const cpx1 = x + (Math.random() * 200 - 100);
+        const cpy1 = y + (Math.random() * 200 - 100);
+        const cpx2 = x + (Math.random() * 400 - 200);
+        const cpy2 = y + (Math.random() * 400 - 200);
+        x = x + (Math.random() * 500 - 250);
+        y = y + (Math.random() * 500 - 250);
+        
+        ctx.bezierCurveTo(cpx1, cpy1, cpx2, cpy2, x, y);
+      }
+      
+      ctx.stroke();
+    }
+    
+    // Add more subtle lines
+    for (let i = 0; i < lines * 1.5; i++) {
+      ctx.beginPath();
+      ctx.strokeStyle = `rgba(255, 255, 255, ${Math.random() * 0.15 + 0.02})`;
+      ctx.lineWidth = Math.random() * 1.5 + 0.2;
+      
+      // Start point
+      let x = Math.random() * canvas.width;
+      let y = Math.random() * canvas.height;
+      
+      ctx.moveTo(x, y);
+      
+      // Create flowing curve
+      for (let j = 0; j < 5; j++) {
+        const cpx1 = x + (Math.random() * 150 - 75);
+        const cpy1 = y + (Math.random() * 150 - 75);
+        const cpx2 = x + (Math.random() * 300 - 150);
+        const cpy2 = y + (Math.random() * 300 - 150);
+        x = x + (Math.random() * 400 - 200);
+        y = y + (Math.random() * 400 - 200);
+        
+        ctx.bezierCurveTo(cpx1, cpy1, cpx2, cpy2, x, y);
+      }
+      
+      ctx.stroke();
+    }
+
+    // Convert to image
+    const dataURL = canvas.toDataURL('image/jpeg', 0.92);
+    
+    // Create download link
+    const link = document.createElement('a');
+    link.download = 'dashboard-background.jpg';
+    link.href = dataURL;
+    link.textContent = 'Download Background Image';
+    link.style.display = 'block';
+    link.style.margin = '20px';
+    document.body.appendChild(link);
+    
+    // Automatically click the link to download
+    link.click();
+  </script>
+</body>
+</html> 
