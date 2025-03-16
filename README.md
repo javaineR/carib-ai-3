@@ -1,91 +1,77 @@
-# QuantumEd Learning Platform
+# CaribAI Learning Platform
 
-QuantumEd is an AI-powered educational platform that transforms syllabus content into engaging, interactive learning modules with Jamaican Creole localization.
+A modern educational platform that transforms syllabi into engaging learning modules with Jamaican Creole explanations. The platform includes an AI assistant, interactive code editor, and personalized learning tools.
 
 ## Features
 
-### Syllabus Analysis and Module Creation
+- **AI-Powered Module Generation**: Upload syllabi and transform them into structured learning modules
+- **Learning Lab**: Interactive coding environment with a built-in Monaco Editor
+- **AI Assistant**: Get answers to questions using OpenAI's GPT models
+- **Programming Modules**: Learn various programming languages with structured content
+- **AI Learning Modules**: Learn AI concepts from basic to advanced levels
+- **Jamaican Creole Integration**: Explanations with cultural context for better understanding
 
-The platform analyzes syllabus text and intelligently breaks it down into smaller, digestible modules:
+## Technologies Used
 
-- **Topic Extraction**: Identifies main topics and subtopics from syllabus content
-- **Content Summarization**: Provides brief summaries of key concepts
-- **Module Organization**: Structures learning content into logical progressions
-
-### Interactive Learning Tools
-
-Each generated module comes with the following interactive features:
-
-#### Games & Quizzes
-- Interactive quizzes based on module content
-- Multiple-choice questions with immediate feedback
-- Score tracking and performance assessment
-
-#### Flashcards
-- Term-definition pairs for key concepts
-- Bilingual support with English and Jamaican Creole translations
-- Interactive flip functionality for self-testing
-
-#### Q&A System
-- AI-powered question answering about module content
-- Frequently asked questions section that grows over time
-- Contextual answers based on module content
-
-### Localization Features
-
-- **Jamaican Creole Translations**: Key terms and concepts are translated to Jamaican Creole
-- **Cultural Context**: Explanations are adapted to be more relevant to Jamaican students
-- **Translation API**: Ability to translate any term on demand
+- **Frontend**: Next.js, React, TypeScript, Tailwind CSS
+- **Editor**: Monaco Editor (VS Code's editor)
+- **AI Integration**: OpenAI API
+- **Authentication**: Firebase Authentication
+- **Styling**: Tailwind CSS with custom theming
 
 ## Getting Started
 
+### Prerequisites
+
+- Node.js 16.x or higher
+- npm or yarn package manager
+
 ### Installation
 
-```bash
-# Clone the repository
-git clone [repository-url]
+1. Clone the repository
+   ```bash
+   git clone https://github.com/javainerobinson/carib-ai.git
+   cd carib-ai
+   ```
 
-# Install dependencies
-npm install
+2. Install dependencies
+   ```bash
+   npm install
+   # or
+   yarn install
+   ```
 
-# Configure environment variables
-cp .env.example .env.local
+3. Create a `.env.local` file in the root directory with your API keys:
+   ```
+   OPENAI_API_KEY=your_openai_api_key
+   FIREBASE_API_KEY=your_firebase_api_key
+   FIREBASE_AUTH_DOMAIN=your_firebase_auth_domain
+   FIREBASE_PROJECT_ID=your_firebase_project_id
+   FIREBASE_STORAGE_BUCKET=your_firebase_storage_bucket
+   FIREBASE_MESSAGING_SENDER_ID=your_firebase_messaging_sender_id
+   FIREBASE_APP_ID=your_firebase_app_id
+   ```
 
-# Start the development server
-npm run dev
-```
+4. Run the development server
+   ```bash
+   npm run dev
+   # or
+   yarn dev
+   ```
 
-### Usage Guide
+5. Open [http://localhost:3000](http://localhost:3000) in your browser
 
-1. **Upload a Syllabus**:
-   - Navigate to the "Create Modules" page
-   - Upload a PDF or DOCX syllabus file
-   - Wait for AI processing to complete
+## Modules
 
-2. **Explore Generated Modules**:
-   - View the modules on the "Modules" tab
-   - Browse through topics and subtopics
-   - Use the interactive learning tools
+### AI Learning Modules
+- AI Fundamentals (Beginner)
+- Machine Learning (Intermediate)
+- Deep Learning (Advanced)
 
-3. **Use Learning Tools**:
-   - Practice with quizzes in the Games section
-   - Study using the flashcards with Jamaican Creole translations
-   - Ask questions in the Q&A section
-
-4. **Export Content**:
-   - Download modules as JSON for data portability
-   - Generate PDF versions for offline studying
-
-## Technical Architecture
-
-- **Next.js**: React framework for the frontend and API routes
-- **OpenAI API**: Powers the AI syllabus analysis and content generation
-- **Shadcn UI**: Component library for the user interface
-- **Vercel AI SDK**: Simplifies AI integrations
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
+### Programming Modules
+- Python Basics (Beginner)
+- JavaScript Essentials (Beginner)
+- Java Fundamentals (Intermediate)
 
 ## License
 
@@ -93,5 +79,6 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## Acknowledgments
 
-- Thanks to all educators and students who provided feedback
-- Special thanks to the Jamaican language experts who helped with translations
+- OpenAI for providing the GPT API
+- Monaco Editor team for the excellent code editor
+- Next.js team for the React framework
