@@ -16,14 +16,14 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  output: 'export',
   experimental: {
     webpackBuildWorker: true,
     parallelServerBuildTraces: true,
     parallelServerCompiles: true,
-    serverActions: {
-      bodySizeLimit: '16mb'
-    }
   },
+  trailingSlash: true,
+  distDir: 'out',
 }
 
 mergeConfig(nextConfig, userConfig)
