@@ -14,13 +14,13 @@ import { getAnalytics, Analytics } from 'firebase/analytics';
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyC3_sMBhOQQPgnRLqgnQhIxCzYVxCuEx-k",
-  authDomain: "carib-ai.firebaseapp.com",
-  projectId: "carib-ai",
-  storageBucket: "carib-ai.appspot.com", // Using standard appspot.com domain
-  messagingSenderId: "294528335993",
-  appId: "1:294528335993:web:a25c9be197d770099d94a8",
-  measurementId: "G-ZZCBQS07KV"
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
 };
 
 // Firebase context type
@@ -79,13 +79,10 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   useEffect(() => {
     // Skip initialization if not hydrated yet or if not on client
     if (!hydrated || typeof window === 'undefined') {
-      console.log('Skipping Firebase initialization: ', 
-        !hydrated ? 'Not hydrated yet' : 'Not on client side');
       return;
     }
     
     if (firebaseInitialized) {
-      console.log('Using cached Firebase instances');
       setFirebaseApp(cachedApp);
       setAuth(cachedAuth);
       setDb(cachedDb);
@@ -97,7 +94,6 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         const unsubscribe = onAuthStateChanged(cachedAuth, (user) => {
           setUser(user);
           setLoading(false);
-          console.log('Auth state updated from cached instance:', user ? 'User logged in' : 'No user');
         });
         
         return unsubscribe;
@@ -109,48 +105,31 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     
     // Define an async function for Firebase initialization
     const initializeFirebase = async () => {
-      console.log('Starting Firebase initialization...');
-      console.log('Next.js environment:', process.env.NODE_ENV);
-      console.log('Is browser:', typeof window !== 'undefined');
-      
       try {
         // Initialize Firebase if not already initialized
         let app: FirebaseApp;
         if (!getApps().length) {
-          console.log('Creating new Firebase app instance with config:', {
-            apiKey: firebaseConfig.apiKey ? 'VALID' : 'MISSING',
-            projectId: firebaseConfig.projectId ? 'VALID' : 'MISSING',
-            authDomain: firebaseConfig.authDomain ? 'VALID' : 'MISSING',
-            // Log other config values similarly
-          });
           app = initializeApp(firebaseConfig);
         } else {
-          console.log('Reusing existing Firebase app instance');
           app = getApps()[0];
         }
         
         // Initialize services with explicit error handling
-        console.log('Initializing Firebase Auth...');
         const authInstance = getAuth(app);
-        console.log('Firebase Auth initialized successfully.');
         
-        console.log('Initializing Firestore...');
+        // Initialize Firestore
         const dbInstance = getFirestore(app);
         
         // Enable offline persistence for Firestore
         try {
           // Enable offline data persistence
           await enableIndexedDbPersistence(dbInstance);
-          console.log('Firestore offline persistence enabled successfully.');
         } catch (err: any) {
           if (err.code === 'failed-precondition') {
             // Multiple tabs open, persistence can only be enabled in one tab at a time
-            console.warn('Firestore persistence failed: Multiple tabs open');
           } else if (err.code === 'unimplemented') {
             // The current browser doesn't support offline persistence
-            console.warn('Firestore persistence not supported by this browser');
           } else {
-            console.error('Error enabling Firestore persistence:', err);
           }
         }
         
@@ -163,9 +142,7 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         // Only initialize analytics in production and on client side
         let analyticsInstance: Analytics | null = null;
         if (process.env.NODE_ENV === 'production') {
-          console.log('Initializing Analytics...');
           analyticsInstance = getAnalytics(app);
-          console.log('Analytics initialized successfully.');
         }
         
         // Cache the instances
@@ -183,24 +160,15 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setStorage(storageInstance);
         setAnalytics(analyticsInstance);
         
-        console.log('All Firebase services initialized successfully.');
-        
         // Monitor auth state
         const unsubscribe = onAuthStateChanged(authInstance, (user) => {
           setUser(user);
           setLoading(false);
-          console.log('Auth state updated:', user ? 'User logged in' : 'No user');
         });
         
         // Return unsubscribe function for cleanup
         return unsubscribe;
       } catch (error: any) {
-        console.error('Error initializing Firebase:', error);
-        console.error('Error details:', {
-          code: error.code,
-          message: error.message,
-          stack: error.stack
-        });
         setError(error);
         setLoading(false);
         return undefined;

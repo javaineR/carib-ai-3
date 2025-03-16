@@ -105,7 +105,7 @@ export function ElevenLabsPlayer({
           if (playPromise !== undefined) {
             playPromise.catch(error => {
               if (error.name === 'NotAllowedError') {
-                console.log('Autoplay prevented - user needs to interact with the page first');
+                // Autoplay prevented - user needs to interact with the page first
                 setError('Click the Play button on the audio player to listen');
               } else {
                 console.error('Error playing audio:', error);

@@ -5,7 +5,18 @@ import { ChevronLeft, Plus, BookOpen, ExternalLink, Rocket, BarChart2, HelpCircl
 import { ImageUpload } from "@/components/ui/image-upload"
 import { getGeneratedModules } from "@/app/actions"
 import Image from "next/image"
-import { useState } from "react"
+import { 
+  MercuryIcon, 
+  VenusIcon, 
+  EarthIcon, 
+  MarsIcon, 
+  JupiterIcon, 
+  SaturnIcon, 
+  BasketballIcon,
+  SoccerBallIcon, 
+  TennisBallIcon, 
+  BaseballIcon
+} from "@/components/ui/decorative-icons"
 
 export default async function DashboardPage() {
   // Fetch modules for the recent modules section
@@ -16,7 +27,7 @@ export default async function DashboardPage() {
     <div className="relative min-h-screen flex flex-col">
       {/* Background Image with Colorful Overlay */}
       <div className="absolute inset-0 w-full h-full z-0 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-purple-900/80 via-blue-800/70 to-indigo-900/80 z-10"></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-purple-600/80 via-blue-600/70 to-pink-600/80 z-10"></div>
         <Image 
           src="/images/dashboard-background.svg" 
           alt="Dashboard Background" 
@@ -24,8 +35,30 @@ export default async function DashboardPage() {
           priority
           style={{ objectFit: 'cover' }}
           quality={100}
-          className="z-0"
+          className="z-0 opacity-60"
         />
+      </div>
+
+      {/* Decorative floating planets */}
+      <div className="absolute inset-0 z-10 pointer-events-none overflow-hidden">
+        <div className="absolute top-20 left-10 animate-float" style={{ animationDelay: "0s" }}>
+          <MarsIcon className="h-8 w-8" />
+        </div>
+        <div className="absolute top-40 right-16 animate-float" style={{ animationDelay: "1.5s" }}>
+          <SaturnIcon className="h-12 w-12" />
+        </div>
+        <div className="absolute bottom-32 left-20 animate-float" style={{ animationDelay: "2.3s" }}>
+          <JupiterIcon className="h-10 w-10" />
+        </div>
+        <div className="absolute bottom-40 right-32 animate-float" style={{ animationDelay: "3.1s" }}>
+          <BasketballIcon className="h-6 w-6" />
+        </div>
+        <div className="absolute top-1/4 left-1/2 animate-float" style={{ animationDelay: "1.8s" }}>
+          <EarthIcon className="h-9 w-9" />
+        </div>
+        <div className="absolute bottom-16 right-16 animate-float" style={{ animationDelay: "0.5s" }}>
+          <SoccerBallIcon className="h-7 w-7" />
+        </div>
       </div>
 
       {/* Content */}
@@ -46,7 +79,7 @@ export default async function DashboardPage() {
         {/* Profile Section */}
         <div className="container mx-auto py-6 px-4">
           <div className="flex flex-col md:flex-row items-start gap-8 mb-10">
-            <div className="bg-gradient-to-br from-blue-900/90 to-purple-900/90 backdrop-blur-sm border border-purple-500/30 rounded-lg p-6 flex flex-col items-center relative shadow-[0_0_15px_rgba(139,92,246,0.5)]">
+            <div className="card-gradient-purple backdrop-blur-sm border border-purple-500/30 rounded-lg p-6 flex flex-col items-center relative hover-scale">
               <div className="absolute -top-4 -right-4 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full p-2 shadow-lg transform hover:rotate-12 transition-transform duration-300">
                 <Medal className="h-5 w-5 text-white" />
               </div>
@@ -63,7 +96,7 @@ export default async function DashboardPage() {
               <p className="text-gray-200">user@example.com</p>
               <Button
                 asChild
-                className="mt-4 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white transition-colors duration-300 shadow-lg"
+                className="mt-4 btn-gradient-pink hover-lift"
               >
                 <Link href="/profile">Edit Profile</Link>
               </Button>
@@ -73,10 +106,18 @@ export default async function DashboardPage() {
 
         {/* Generate Modules Section */}
         <div className="flex-1 flex items-center justify-center px-4 py-8">
-          <div className="text-center max-w-2xl mx-auto bg-gradient-to-br from-indigo-900/80 to-blue-900/80 backdrop-blur-sm p-8 rounded-xl relative shadow-[0_0_20px_rgba(99,102,241,0.4)] border border-indigo-500/30">
-            <div className="absolute -top-5 left-1/2 transform -translate-x-1/2 bg-gradient-to-br from-red-500 to-orange-500 rounded-full p-3 shadow-lg hover:scale-110 transition-transform duration-300">
+          <div className="text-center max-w-2xl mx-auto card-gradient-blue p-8 rounded-xl relative hover-scale">
+            <div className="absolute -top-5 left-1/2 transform -translate-x-1/2 bg-gradient-to-br from-red-500 to-orange-500 rounded-full p-3 shadow-lg hover:scale-110 transition-transform duration-300 animate-bounce-slow">
               <Rocket className="h-6 w-6 text-white" />
             </div>
+            
+            <div className="absolute -top-3 -left-3">
+              <MarsIcon className="h-8 w-8" />
+            </div>
+            <div className="absolute -bottom-3 -right-3">
+              <SaturnIcon className="h-10 w-10" />
+            </div>
+            
             <h2 className="text-3xl font-bold text-white mb-4 mt-4">Ready to Create Learning Modules?</h2>
             <p className="text-gray-200 mb-8">
               Upload your syllabus and let our AI transform it into engaging learning modules with Jamaican Creole
@@ -85,7 +126,7 @@ export default async function DashboardPage() {
             <Button
               asChild
               size="lg"
-              className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white transition-all duration-300 hover:scale-105 text-lg px-8 py-6 h-auto shadow-lg"
+              className="btn-gradient-green hover-lift text-lg px-8 py-6 h-auto"
             >
               <Link href="/generate-modules">
                 <Plus className="mr-2 h-5 w-5" />
@@ -98,9 +139,12 @@ export default async function DashboardPage() {
         {/* Quick Stats Section */}
         <div className="container mx-auto py-10 px-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card className="bg-gradient-to-br from-blue-800/90 to-blue-900/90 backdrop-blur-sm border-blue-500/30 transition-transform duration-300 hover:scale-105 relative shadow-[0_0_15px_rgba(59,130,246,0.4)]">
+            <Card className="card-gradient-blue relative hover-scale">
               <div className="absolute -top-3 -right-3 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full p-2 shadow-lg transform hover:rotate-12 transition-transform duration-300">
                 <Bookmark className="h-4 w-4 text-white" />
+              </div>
+              <div className="absolute -top-3 -left-3">
+                <BaseballIcon className="h-6 w-6" />
               </div>
               <CardHeader>
                 <CardTitle className="text-white">Recent Modules</CardTitle>
@@ -122,7 +166,7 @@ export default async function DashboardPage() {
                         </Button>
                       </div>
                     ))}
-                    <Button asChild className="w-full mt-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-md">
+                    <Button asChild className="w-full mt-2 btn-gradient-blue">
                       <Link href="/?tab=modules">View All Modules</Link>
                     </Button>
                   </div>
@@ -132,9 +176,12 @@ export default async function DashboardPage() {
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-purple-800/90 to-purple-900/90 backdrop-blur-sm border-purple-500/30 transition-transform duration-300 hover:scale-105 relative shadow-[0_0_15px_rgba(139,92,246,0.4)]">
+            <Card className="card-gradient-purple relative hover-scale">
               <div className="absolute -top-3 -right-3 bg-gradient-to-br from-purple-400 to-purple-600 rounded-full p-2 shadow-lg transform hover:rotate-12 transition-transform duration-300">
                 <BarChart2 className="h-4 w-4 text-white" />
+              </div>
+              <div className="absolute -top-3 -left-3">
+                <TennisBallIcon className="h-6 w-6" />
               </div>
               <CardHeader>
                 <CardTitle className="text-white">Quick Stats</CardTitle>
@@ -158,9 +205,12 @@ export default async function DashboardPage() {
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-pink-800/90 to-pink-900/90 backdrop-blur-sm border-pink-500/30 transition-transform duration-300 hover:scale-105 relative shadow-[0_0_15px_rgba(219,39,119,0.4)]">
+            <Card className="card-gradient-pink relative hover-scale">
               <div className="absolute -top-3 -right-3 bg-gradient-to-br from-pink-400 to-pink-600 rounded-full p-2 shadow-lg transform hover:rotate-12 transition-transform duration-300">
                 <HelpCircle className="h-4 w-4 text-white" />
+              </div>
+              <div className="absolute -top-3 -left-3">
+                <VenusIcon className="h-6 w-6" />
               </div>
               <CardHeader>
                 <CardTitle className="text-white">Help & Support</CardTitle>
@@ -168,15 +218,18 @@ export default async function DashboardPage() {
               </CardHeader>
               <CardContent>
                 <p className="text-pink-200">Access tutorials and support resources</p>
-                <Button className="mt-4 bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700 text-white shadow-md">
+                <Button className="mt-4 btn-gradient-pink">
                   View Resources
                 </Button>
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-green-800/90 to-green-900/90 backdrop-blur-sm border-green-500/30 transition-transform duration-300 hover:scale-105 relative shadow-[0_0_15px_rgba(16,185,129,0.4)]">
+            <Card className="card-gradient-green relative hover-scale">
               <div className="absolute -top-3 -right-3 bg-gradient-to-br from-green-400 to-green-600 rounded-full p-2 shadow-lg transform hover:rotate-12 transition-transform duration-300">
                 <CircleUser className="h-4 w-4 text-white" />
+              </div>
+              <div className="absolute -top-3 -left-3">
+                <EarthIcon className="h-6 w-6" />
               </div>
               <CardHeader>
                 <CardTitle className="text-white">Learning Lab</CardTitle>
@@ -184,7 +237,7 @@ export default async function DashboardPage() {
               </CardHeader>
               <CardContent>
                 <p className="text-green-200">Explore interactive STEM modules and practice coding.</p>
-                <Button className="mt-4 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-md" asChild>
+                <Button className="mt-4 btn-gradient-green" asChild>
                   <Link href="/learning-lab">Explore Learning Lab</Link>
                 </Button>
               </CardContent>

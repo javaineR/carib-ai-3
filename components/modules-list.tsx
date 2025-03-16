@@ -66,15 +66,8 @@ type Module = {
 }
 
 export default function ModulesList({ initialModules }: { initialModules: Module[] }) {
-  // Improved logging to better track what's being received
-  console.log(`ModulesList received ${initialModules?.length || 0} initial modules`);
-  if (initialModules?.length > 0) {
-    console.log(`First module title: "${initialModules[0]?.title}"`);
-  }
-  
   // Check if initialModules is an array
   if (!Array.isArray(initialModules)) {
-    console.error("initialModules is not an array, using empty array");
     initialModules = [];
   }
   
@@ -83,14 +76,12 @@ export default function ModulesList({ initialModules }: { initialModules: Module
   if (initialModules.length > 1) {
     const exampleModuleIndex = initialModules.findIndex(m => m.title === "Example Module");
     if (exampleModuleIndex >= 0) {
-      console.log("Filtering out default Example Module since we have real modules");
       initialModules = initialModules.filter((_, i) => i !== exampleModuleIndex);
     }
   }
   
   // Ensure each module has the proper structure
   const safeInitialModules = initialModules.map(module => ensureValidModuleStructure(module));
-  console.log(`Processed ${safeInitialModules.length} modules for display with titles: ${safeInitialModules.map(m => m.title).join(', ')}`);
   
   const [modules, setModules] = useState<Module[]>(safeInitialModules);
   const [editingModule, setEditingModule] = useState<{ index: number; content: string } | null>(null)
@@ -438,12 +429,8 @@ export default function ModulesList({ initialModules }: { initialModules: Module
     // Make sure the quiz has questions
     const quiz = modules[selectedModule || 0].learningTools.games[quizIndex];
     if (!quiz || !quiz.questions || quiz.questions.length === 0) {
-      console.error("Cannot start quiz: no questions available");
       return;
     }
-
-    // Log the number of questions to help debug
-    console.log(`Starting quiz: ${quiz.title} with ${quiz.questions.length} questions`);
     
     // Ensure we load all questions by explicitly assigning the quiz
     setQuizState({
@@ -681,7 +668,6 @@ export default function ModulesList({ initialModules }: { initialModules: Module
           }
           
           jamaicanCreole = nextLine;
-          console.log("Found Jamaican Creole by pattern 1:", jamaicanCreole);
         } else {
           // Second approach: Look for lines with "Jamaican Creole:" in them
           for (let i = 0; i < lines.length; i++) {
@@ -691,7 +677,6 @@ export default function ModulesList({ initialModules }: { initialModules: Module
               const colonParts = line.split(':');
               if (colonParts.length > 1 && colonParts[1].trim()) {
                 jamaicanCreole = colonParts[1].trim();
-                console.log("Found Jamaican Creole by pattern 2:", jamaicanCreole);
                 break;
               }
               
@@ -700,7 +685,6 @@ export default function ModulesList({ initialModules }: { initialModules: Module
                 const nextLine = lines[j].trim();
                 if (nextLine) {
                   jamaicanCreole = nextLine;
-                  console.log("Found Jamaican Creole by pattern 3:", jamaicanCreole);
                   break;
                 }
               }
@@ -720,7 +704,6 @@ export default function ModulesList({ initialModules }: { initialModules: Module
             const trimmedLine = line.trim();
             if (patoisPatterns.some(pattern => pattern.test(trimmedLine))) {
               jamaicanCreole = trimmedLine;
-              console.log("Found Jamaican Creole by language pattern:", jamaicanCreole);
               break;
             }
           }
@@ -734,7 +717,6 @@ export default function ModulesList({ initialModules }: { initialModules: Module
             const line = lines[i].trim();
             if (line && !line.match(/^\d+\./) && !line.match(/example/i)) {
               jamaicanCreole = line;
-              console.log("Found Jamaican Creole by fallback:", jamaicanCreole);
               break;
             }
           }
@@ -746,7 +728,6 @@ export default function ModulesList({ initialModules }: { initialModules: Module
           for (let i = middleIndex; i < lines.length; i++) {
             if (lines[i].trim()) {
               jamaicanCreole = lines[i].trim();
-              console.log("Found Jamaican Creole by last resort:", jamaicanCreole);
               break;
             }
           }
@@ -875,7 +856,6 @@ export default function ModulesList({ initialModules }: { initialModules: Module
                 // If we have fewer than 10 questions, duplicate existing ones with variations
                 // to reach at least 10 questions
                 if (processedQuestions.length < 10) {
-                  console.log(`Quiz "${game.title}" has only ${processedQuestions.length} questions, adding more to reach 10+`);
                   const originalCount = processedQuestions.length;
                   
                   for (let i = 0; processedQuestions.length < 10; i++) {
@@ -914,7 +894,6 @@ export default function ModulesList({ initialModules }: { initialModules: Module
         }
       };
 
-      console.log(`Module "${safeModule.title}" processed successfully`);
       return safeModule;
     } catch (error) {
       console.error("Error ensuring valid module structure:", error);
@@ -1043,8 +1022,7 @@ export default function ModulesList({ initialModules }: { initialModules: Module
         playPromise.catch((error) => {
           // Auto-play was prevented - likely needs user interaction
           if (error.name === 'NotAllowedError') {
-            console.log('Autoplay prevented, waiting for user interaction');
-            // We won't set error states here since this is an expected behavior
+            // Autoplay prevented, waiting for user interaction
             setIsSpeaking(false);
           } else {
             console.error('Error during audio playback:', error);
@@ -1119,7 +1097,7 @@ export default function ModulesList({ initialModules }: { initialModules: Module
       } else {
         // Check if we should use browser TTS
         if (result.shouldUseBrowserTTS) {
-          console.log("API key not configured or error - falling back to browser TTS");
+          // API key not configured or error - falling back to browser TTS
           speakText(text);
         } else {
           console.error("Failed to generate voice:", result.error);

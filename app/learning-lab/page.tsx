@@ -3,11 +3,11 @@
 import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Brain, Code } from "lucide-react";
+import { Brain, Code, Sparkles, Atom, Zap, Book, Microscope } from "lucide-react";
 import Link from "next/link";
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 
-// Dynamically import Monaco Editor to avoid SSR issues
+// Dynamically import Monaco Editor
 const MonacoEditor = dynamic(
   () => import('@monaco-editor/react').catch(err => {
     console.error("Failed to load Monaco Editor:", err);
@@ -29,7 +29,7 @@ const aiModules = [
     description: "Learn the basics of artificial intelligence, including key concepts and terminology.",
     level: "Beginner",
     topics: ["What is AI?", "Machine Learning Basics", "Neural Networks", "AI Ethics"],
-    link: "/learning-lab?module=ai-basics"
+    link: "/learning-lab/module/ai-basics"
   },
   {
     id: "machine-learning",
@@ -37,7 +37,7 @@ const aiModules = [
     description: "Explore different machine learning algorithms and their applications.",
     level: "Intermediate",
     topics: ["Supervised Learning", "Unsupervised Learning", "Reinforcement Learning", "Model Evaluation"],
-    link: "/learning-lab?module=machine-learning"
+    link: "/learning-lab/module/machine-learning"
   },
   {
     id: "deep-learning",
@@ -45,7 +45,15 @@ const aiModules = [
     description: "Dive deep into neural networks and advanced AI techniques.",
     level: "Advanced",
     topics: ["Deep Neural Networks", "Convolutional Networks", "Recurrent Networks", "Transformers"],
-    link: "/learning-lab?module=deep-learning"
+    link: "/learning-lab/module/deep-learning"
+  },
+  {
+    id: "prompt-engineering",
+    title: "Prompt Engineering",
+    description: "Master the art of crafting effective prompts for large language models.",
+    level: "Intermediate",
+    topics: ["Prompt Structure", "Few-shot Learning", "Chain of Thought", "Parameter Optimization"],
+    link: "/learning-lab/module/prompt-engineering"
   }
 ];
 
@@ -57,7 +65,7 @@ const programmingModules = [
     description: "Start your programming journey with Python, one of the most beginner-friendly languages.",
     level: "Beginner",
     topics: ["Variables & Data Types", "Control Flow", "Functions", "Basic Data Structures"],
-    link: "/learning-lab?module=python-basics"
+    link: "/learning-lab/module/python-basics"
   },
   {
     id: "javascript-essentials",
@@ -65,7 +73,7 @@ const programmingModules = [
     description: "Learn the language of the web and build interactive websites.",
     level: "Beginner",
     topics: ["Variables & Functions", "DOM Manipulation", "Asynchronous JS", "Modern JS Features"],
-    link: "/learning-lab?module=javascript-essentials"
+    link: "/learning-lab/module/javascript-essentials"
   },
   {
     id: "java-fundamentals",
@@ -73,12 +81,41 @@ const programmingModules = [
     description: "Master object-oriented programming with Java.",
     level: "Intermediate",
     topics: ["OOP Concepts", "Classes & Objects", "Inheritance", "Exception Handling"],
-    link: "/learning-lab?module=java-fundamentals"
+    link: "/learning-lab/module/java-fundamentals"
+  }
+];
+
+// Physics module data
+const physicsModules = [
+  {
+    id: "classical-mechanics",
+    title: "Classical Mechanics",
+    description: "Understand the fundamental principles of motion, force, and energy.",
+    level: "Beginner",
+    topics: ["Newton's Laws", "Conservation Laws", "Kinematics", "Dynamics"],
+    link: "/learning-lab/module/classical-mechanics"
+  },
+  {
+    id: "electricity-magnetism",
+    title: "Electricity & Magnetism",
+    description: "Explore the fascinating world of electric and magnetic fields.",
+    level: "Intermediate",
+    topics: ["Electric Fields", "Magnetic Fields", "Electromagnetic Induction", "Circuit Analysis"],
+    link: "/learning-lab/module/electricity-magnetism"
+  },
+  {
+    id: "quantum-physics",
+    title: "Quantum Physics",
+    description: "Dive into the strange quantum world that governs atomic and subatomic particles.",
+    level: "Advanced",
+    topics: ["Wave-Particle Duality", "Schrödinger's Equation", "Quantum States", "Quantum Entanglement"],
+    link: "/learning-lab/module/quantum-physics"
   }
 ];
 
 export default function LearningLabPage() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const [query, setQuery] = useState('');
   const [response, setResponse] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -97,7 +134,7 @@ export default function LearningLabPage() {
       setActiveTab('modules');
     }
     
-    if (categoryParam && (categoryParam === 'ai' || categoryParam === 'programming')) {
+    if (categoryParam && (categoryParam === 'ai' || categoryParam === 'programming' || categoryParam === 'physics')) {
       setSelectedCategory(categoryParam);
       setActiveTab('modules');
     }
@@ -150,146 +187,94 @@ export default function LearningLabPage() {
     setLanguage(e.target.value);
   };
 
+  const handleModuleSelect = (moduleLink: string) => {
+    router.push(moduleLink);
+  };
+
   const executeCode = () => {
-    setOutput('');
+    if (!code.trim()) {
+      setOutput('No code to execute.');
+      return;
+    }
+
+    setOutput('Executing code...');
     
+    // For JavaScript, we can use a try-catch and eval
+    // This is a simplified version - in a real app you would want to use a sandbox
     if (language === 'javascript') {
       try {
-        // Create a new function from the code string
-        const consoleOutput: string[] = [];
-        
-        // Save original console methods
-        const originalConsole = {
-          log: console.log,
-          error: console.error,
-          warn: console.warn
+        // Create a function to capture console.log output
+        let logs: string[] = [];
+        const originalConsoleLog = console.log;
+        console.log = (...args) => {
+          logs.push(args.map(arg => 
+            typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+          ).join(' '));
+          originalConsoleLog(...args);
         };
         
-        // Create safer console override
-        const safeConsole = {
-          log: function(...args: any[]) {
-            const output = args.map(arg => 
-              typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
-            ).join(' ');
-            consoleOutput.push(output);
-            originalConsole.log(...args);
-          },
-          error: function(...args: any[]) {
-            const output = args.map(arg => 
-              typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
-            ).join(' ');
-            consoleOutput.push(`Error: ${output}`);
-            originalConsole.error(...args);
-          },
-          warn: function(...args: any[]) {
-            const output = args.map(arg => 
-              typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
-            ).join(' ');
-            consoleOutput.push(`Warning: ${output}`);
-            originalConsole.warn(...args);
-          }
-        };
-        
-        // Override console methods
-        console.log = safeConsole.log;
-        console.error = safeConsole.error;
-        console.warn = safeConsole.warn;
-        
+        // Execute the code
         try {
-          // Wrap user code in a try-catch block
-          const wrappedCode = `
-            try {
-              ${code}
-            } catch (error) {
-              console.error(error instanceof Error ? error.message : 'An error occurred');
-            }
-          `;
+          // Use Function constructor to prevent access to local scope
+          new Function(code)();
           
-          // Execute the code with a timeout and sandbox
-          setTimeout(() => {
-            try {
-              // eslint-disable-next-line no-new-func
-              new Function(wrappedCode)();
-            } catch (innerError) {
-              console.error('Code execution error:', innerError instanceof Error ? innerError.message : 'Unknown error');
-            }
-            
-            // Set the captured output after a short delay to ensure all console output is captured
-            setTimeout(() => {
-              if (consoleOutput.length > 0) {
-                setOutput(consoleOutput.join('\n'));
-              } else {
-                setOutput('Code executed successfully. No output generated.');
-              }
-              
-              // Restore original console methods
-              console.log = originalConsole.log;
-              console.error = originalConsole.error;
-              console.warn = originalConsole.warn;
-            }, 50);
-          }, 0);
-        } catch (error) {
-          // Restore console methods if an error occurs
-          console.log = originalConsole.log;
-          console.error = originalConsole.error;
-          console.warn = originalConsole.warn;
-          
-          if (error instanceof Error) {
-            setOutput(`Runtime Error: ${error.message}`);
-          } else {
-            setOutput('An unknown runtime error occurred');
+          if (logs.length === 0) {
+            logs.push('Code executed successfully, but no output was generated.');
           }
+          
+          setOutput(logs.join('\n'));
+        } finally {
+          // Restore original console.log
+          console.log = originalConsoleLog;
         }
       } catch (error) {
         if (error instanceof Error) {
           setOutput(`Error: ${error.message}`);
         } else {
-          setOutput('An unknown error occurred');
+          setOutput('An unknown error occurred.');
         }
       }
     } else {
-      setOutput(`Running ${language} code is not supported in the browser. This is a mock execution environment.`);
+      // For other languages, we'd need a backend service
+      setOutput(`Executing ${language} code requires a backend service. This is a demo only.`);
     }
   };
 
   return (
-    <div className="container mx-auto py-10 px-4">
-      <h1 className="text-4xl font-bold text-center text-white">Welcome to the Learning Lab</h1>
-      <p className="text-lg text-center text-gray-200 mt-4 mb-8">
-        Explore interactive STEM modules and practice coding with our built-in code editor.
-      </p>
+    <div className="min-h-screen p-4 bg-gray-900 text-gray-100">
+      <h1 className="text-3xl font-bold mb-6 text-center">Interactive Learning Lab</h1>
       
-      {/* Tab Navigation */}
-      <div className="max-w-4xl mx-auto mb-6">
-        <div className="flex border-b border-gray-700">
-          <button
-            className={`py-2 px-4 font-medium ${activeTab === 'modules' 
-              ? 'text-blue-500 border-b-2 border-blue-500' 
-              : 'text-gray-400 hover:text-gray-200'}`}
-            onClick={() => setActiveTab('modules')}
-          >
-            Learning Modules
-          </button>
-          <button
-            className={`py-2 px-4 font-medium ${activeTab === 'chat' 
-              ? 'text-blue-500 border-b-2 border-blue-500' 
-              : 'text-gray-400 hover:text-gray-200'}`}
-            onClick={() => setActiveTab('chat')}
-          >
-            AI Assistant
-          </button>
-          <button
-            className={`py-2 px-4 font-medium ${activeTab === 'code' 
-              ? 'text-blue-500 border-b-2 border-blue-500' 
-              : 'text-gray-400 hover:text-gray-200'}`}
-            onClick={() => setActiveTab('code')}
-          >
-            Code Editor
-          </button>
+      <div className="max-w-6xl mx-auto mb-8">
+        <div className="flex justify-center">
+          <div className="inline-flex rounded-md shadow-sm">
+            <button
+              className={`py-2 px-6 rounded-l-lg font-medium ${activeTab === 'modules' 
+                ? 'bg-blue-600 text-white' 
+                : 'bg-gray-800 text-gray-300 hover:bg-gray-700'}`}
+              onClick={() => setActiveTab('modules')}
+            >
+              Learning Modules
+            </button>
+            <button
+              className={`py-2 px-6 font-medium ${activeTab === 'code' 
+                ? 'bg-blue-600 text-white' 
+                : 'bg-gray-800 text-gray-300 hover:bg-gray-700'}`}
+              onClick={() => setActiveTab('code')}
+            >
+              Code Environment
+            </button>
+            <button
+              className={`py-2 px-6 rounded-r-lg font-medium ${activeTab === 'chat' 
+                ? 'bg-blue-600 text-white' 
+                : 'bg-gray-800 text-gray-300 hover:bg-gray-700'}`}
+              onClick={() => setActiveTab('chat')}
+            >
+              AI Assistant
+            </button>
+          </div>
         </div>
       </div>
-
-      {/* Tab Content */}
+      
       <div className="max-w-6xl mx-auto">
         {/* Learning Modules */}
         {activeTab === 'modules' && (
@@ -303,15 +288,32 @@ export default function LearningLabPage() {
                     : 'bg-gray-800 text-gray-300 hover:bg-gray-700'}`}
                   onClick={() => setSelectedCategory('ai')}
                 >
-                  AI Learning
+                  <div className="flex items-center">
+                    <Brain className="h-4 w-4 mr-2" />
+                    AI Learning
+                  </div>
                 </button>
                 <button
-                  className={`py-2 px-6 rounded-r-lg font-medium ${selectedCategory === 'programming' 
+                  className={`py-2 px-6 font-medium ${selectedCategory === 'programming' 
                     ? 'bg-blue-600 text-white' 
                     : 'bg-gray-800 text-gray-300 hover:bg-gray-700'}`}
                   onClick={() => setSelectedCategory('programming')}
                 >
-                  Programming
+                  <div className="flex items-center">
+                    <Code className="h-4 w-4 mr-2" />
+                    Programming
+                  </div>
+                </button>
+                <button
+                  className={`py-2 px-6 rounded-r-lg font-medium ${selectedCategory === 'physics' 
+                    ? 'bg-blue-600 text-white' 
+                    : 'bg-gray-800 text-gray-300 hover:bg-gray-700'}`}
+                  onClick={() => setSelectedCategory('physics')}
+                >
+                  <div className="flex items-center">
+                    <Atom className="h-4 w-4 mr-2" />
+                    Physics
+                  </div>
                 </button>
               </div>
             </div>
@@ -342,11 +344,13 @@ export default function LearningLabPage() {
                       </div>
                     </CardContent>
                     <CardFooter>
-                      <button
-                        className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded transition"
-                      >
-                        Start Learning
-                      </button>
+                      <Link href={module.link} className="w-full">
+                        <button
+                          className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded transition"
+                        >
+                          Start Learning
+                        </button>
+                      </Link>
                     </CardFooter>
                   </Card>
                 ))}
@@ -379,11 +383,52 @@ export default function LearningLabPage() {
                       </div>
                     </CardContent>
                     <CardFooter>
-                      <button
-                        className="w-full py-2 bg-green-600 hover:bg-green-700 text-white rounded transition"
-                      >
-                        Start Learning
-                      </button>
+                      <Link href={module.link} className="w-full">
+                        <button
+                          className="w-full py-2 bg-green-600 hover:bg-green-700 text-white rounded transition"
+                        >
+                          Start Learning
+                        </button>
+                      </Link>
+                    </CardFooter>
+                  </Card>
+                ))}
+              </div>
+            )}
+
+            {/* Physics Modules */}
+            {selectedCategory === 'physics' && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {physicsModules.map((module) => (
+                  <Card key={module.id} className="bg-gray-800 border-gray-700 transition-transform duration-300 hover:scale-105">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center justify-between">
+                        <Atom className="h-6 w-6 text-purple-500 mb-2" />
+                        <span className="text-sm text-purple-400 font-medium bg-purple-400/10 px-2 py-1 rounded">
+                          {module.level}
+                        </span>
+                      </div>
+                      <CardTitle className="text-white">{module.title}</CardTitle>
+                      <CardDescription className="text-gray-300">{module.description}</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-sm text-gray-200">
+                        <h4 className="font-medium mb-2">Topics covered:</h4>
+                        <ul className="list-disc pl-5 space-y-1">
+                          {module.topics.map((topic, i) => (
+                            <li key={i}>{topic}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    </CardContent>
+                    <CardFooter>
+                      <Link href={module.link} className="w-full">
+                        <button
+                          className="w-full py-2 bg-purple-600 hover:bg-purple-700 text-white rounded transition"
+                        >
+                          Start Learning
+                        </button>
+                      </Link>
                     </CardFooter>
                   </Card>
                 ))}

@@ -273,7 +273,7 @@ export default function FileUpload() {
                   // Set a backup approach with window.location after a small delay
                   setTimeout(() => {
                     if (document.location.pathname !== "/" || !document.location.search.includes("tab=modules")) {
-                      console.log("Router navigation may have failed, using direct location change");
+                      // Fallback to direct location change if router navigation fails
                       window.location.href = `/?tab=modules&${randomParam}`;
                     }
                   }, 300);

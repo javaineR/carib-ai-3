@@ -1,648 +1,382 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeftIcon } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Bot, User, Send, ArrowLeft, Mic, MicOff, Volume2, VolumeX } from 'lucide-react';
 import Link from 'next/link';
 
-type Module = {
-  title: string;
-  description: string;
-  learningObjectives?: string[];
-  topics: Array<{
-    title: string;
-    content: string;
-    subtopics: string[];
-    keyTerms?: Array<{
-      term: string;
-      simplifiedDefinition: string;
-      examples?: string[];
-    }>;
-  }>;
-  learningTools?: {
-    games?: Array<{
-      title: string;
-      questions: Array<{
-        question: string;
-        options?: string[];
-        correctAnswer?: string;
-        explanation?: string;
-      }>;
-    }>;
-    flashcards?: Array<{
-      term: string;
-      definition: string;
-      simplifiedDefinition?: string;
-      creoleDefinition?: string;
-    }>;
-    questionBank?: Array<{
-      question: string;
-      answer: string;
-    }>;
-  };
-};
+// Define types for message structure
+type MessageType = 'user' | 'assistant';
 
-interface DialogueEntry {
-  student: string;
-  teacher: string;
-  audioStatus?: 'idle' | 'loading' | 'error' | 'success';
-  audioData?: string;
-  studentAudioStatus?: 'idle' | 'loading' | 'error' | 'success';
-  studentAudioData?: string;
+interface Message {
+  type: MessageType;
+  content: string;
+  timestamp: Date;
 }
 
-// Helper function to generate dialogue entries based on the module
-function generateDialogueEntries(module: Module): DialogueEntry[] {
-  // Extract key terms from the module
-  const allKeyTerms = module.topics.flatMap(topic => 
-    topic.keyTerms?.map(term => ({ 
-      term: term.term, 
-      definition: term.simplifiedDefinition,
-      topic: topic.title
-    })) || []
-  );
-
-  // Base dialogue entries about the module content
-  const baseEntries: DialogueEntry[] = [
-    {
-      student: `What is this "${module.title}" module about?`,
-      teacher: `Yow mi bredren! Di "${module.title}" module a one comprehensive learning resource weh cover everything bout ${module.description}. It focus pon ${module.topics.map(t => t.title).join(', ')}, and aim fi give yuh a solid understanding of di subject. Wi create it from di PDF weh upload, and extract all di important information fi yuh learning. Yuh can explore each topic in detail, practice wid quizzes, and use flashcards fi remember di key terms dem.`
-    },
-    {
-      student: `What are the main learning objectives for this module?`,
-      teacher: module.learningObjectives ? 
-        `Yes mi yout! Di main learning objectives fi "${module.title}" include:\n\n${module.learningObjectives.map(obj => `• ${obj}`).join('\n\n')}.\n\nWi design dese objectives carefully based pon di syllabus weh upload, so when yuh finish study dis module, yuh should have mastery of dese key areas.` : 
-        `Yes mi yout! Di main learning objective fi "${module.title}" is fi ensure yuh fully understand ${module.description}. Wi look at di PDF content carefully and extract di most important concepts, even though di original document nuh list specific objectives. By di time yuh finish study dis module, yuh should have a solid grasp of ${module.topics.map(t => t.title).join(', ')}.`
-    },
-    {
-      student: `Can you explain the main topics covered in this module?`,
-      teacher: `Alright, let mi break down di main topics inna di "${module.title}" module:\n\n${module.topics.map((topic, index) => 
-        `${index + 1}. **${topic.title}**: ${topic.content.substring(0, 150)}...${topic.subtopics && topic.subtopics.length > 0 ? `\n   Dis include subtopics like: ${topic.subtopics.slice(0, 3).join(', ')}${topic.subtopics.length > 3 ? ', and more' : ''}` : ''}`
-      ).join('\n\n')}\n\nEach of dese topics come directly from di PDF document weh upload, and wi structure dem fi mek learning more effective.`
-    }
-  ];
-  
-  // Add dialogue entries for each key term
-  const keyTermEntries = allKeyTerms.slice(0, 5).map(term => ({
-    student: `Can you explain the term "${term.term}" from the ${term.topic} section?`,
-    teacher: `Yes, mi can explain "${term.term}" from di ${term.topic} section!\n\n"${term.term}" mean: ${term.definition}\n\nDis term important when yuh studying ${module.title} because it help yuh understand di fundamental concepts. When yuh grasp dis term properly, many other parts of di module become clearer. Mi can provide more examples if yuh need dem.`
-  }));
-
-  // Add entries about learning tools
-  const learningToolEntries: DialogueEntry[] = [];
-
-  // Add quiz entry if module has quizzes
-  if (module.learningTools?.games && module.learningTools.games.length > 0) {
-    learningToolEntries.push({
-      student: "What kind of quizzes are available in this module?",
-      teacher: `Di "${module.title}" module have ${module.learningTools.games.length} quiz${module.learningTools.games.length > 1 ? 'zes' : ''} fi test yuh knowledge:\n\n${module.learningTools.games.map((quiz, index) => 
-        `${index + 1}. "${quiz.title}" - Dis quiz have ${quiz.questions.length} question${quiz.questions.length > 1 ? 's' : ''} about ${module.title}`
-      ).join('\n\n')}\n\nDese quizzes design fi help yuh check yuh understanding and reinforce what yuh learn. Each question come wid explanation so yuh can learn from any mistake.`
-    });
-  }
-
-  // Add flashcard entry if module has flashcards
-  if (module.learningTools?.flashcards && module.learningTools.flashcards.length > 0) {
-    learningToolEntries.push({
-      student: "How can I use the flashcards in this module?",
-      teacher: `Di "${module.title}" module have ${module.learningTools.flashcards.length} flashcard${module.learningTools.flashcards.length > 1 ? 's' : ''} weh can help yuh memorize key terms and concepts. Each flashcard have di term pon one side and di definition pon di other side.\n\nSome of di important flashcards include:\n\n${module.learningTools.flashcards.slice(0, 3).map((card, index) => 
-        `${index + 1}. "${card.term}" - ${card.simplifiedDefinition || card.definition}`
-      ).join('\n\n')}${module.learningTools.flashcards.length > 3 ? '\n\n...and more' : ''}\n\nYuh can use dese flashcards fi quick review or fi test yuhself before quizzes. Di best way fi use dem is fi look at di term, try recall di definition, den check if yuh right.`
-    });
-  }
-
-  // Combine all entries
-  return [...baseEntries, ...keyTermEntries, ...learningToolEntries];
-}
-
-// Helper function to safely play audio with user interaction check
-const safelyPlayAudio = async (audio: HTMLAudioElement) => {
-  try {
-    // Store the result of play() which returns a Promise
-    const playPromise = audio.play();
-    
-    // If playPromise is undefined, the browser doesn't support promises for play()
-    if (playPromise !== undefined) {
-      playPromise.catch((error) => {
-        // Auto-play was prevented - likely needs user interaction
-        if (error.name === 'NotAllowedError') {
-          console.log('Autoplay prevented, waiting for user interaction');
-          // We won't set error states here since this is an expected behavior
-        } else {
-          console.error('Error during audio playback:', error);
-        }
-      });
-    }
-  } catch (error) {
-    console.error('Error during audio playback setup:', error);
-  }
+// Mock AI tutor responses based on module topics
+const mockResponses: Record<string, string[]> = {
+  "ai-basics": [
+    "Artificial Intelligence is a field of computer science focused on creating systems that can perform tasks normally requiring human intelligence.",
+    "Machine Learning is a subset of AI that allows systems to learn from data and improve their performance without being explicitly programmed.",
+    "Neural networks are computing systems inspired by the biological neural networks in human brains, consisting of nodes (neurons) connected in layers.",
+    "AI ethics involves considerations about fairness, transparency, privacy, and the social impact of artificial intelligence systems."
+  ],
+  "prompt-engineering": [
+    "Prompt engineering is the process of designing effective inputs for language models to produce desired outputs.",
+    "Few-shot learning involves providing examples within your prompt to guide the AI in producing similar responses.",
+    "Chain of thought prompting helps break down complex reasoning into step-by-step thinking processes.",
+    "Temperature controls the randomness in AI responses - higher values create more creative but potentially less accurate outputs."
+  ],
+  "python-basics": [
+    "Python is a high-level, interpreted programming language known for its readability and simplicity.",
+    "Variables in Python are created by assignment using the = operator, and data types include strings, integers, floats, and booleans.",
+    "Control flow statements in Python include if-elif-else conditionals and for/while loops.",
+    "Functions are defined using the 'def' keyword, allowing you to create reusable blocks of code."
+  ],
+  "classical-mechanics": [
+    "Classical mechanics is the branch of physics dealing with the motion of macroscopic objects under the influence of forces.",
+    "Newton's First Law states that an object at rest stays at rest, and an object in motion stays in motion unless acted upon by an external force.",
+    "The conservation of momentum principle states that the total momentum of a closed system remains constant.",
+    "Kinematics is the branch of mechanics that describes the motion of objects without considering the forces that cause the motion."
+  ]
 };
+
+// Generic responses for any module
+const genericResponses = [
+  "That's an interesting question! Let me explain...",
+  "Great question. The key thing to understand is...",
+  "I'd be happy to help you with that. Let's break it down...",
+  "That's a common area of confusion. Here's what you need to know...",
+  "Let me clarify that concept for you..."
+];
 
 export default function ModuleConversationPage() {
   const params = useParams();
   const router = useRouter();
-  const [module, setModule] = useState<Module | null>(null);
-  const [dialogue, setDialogue] = useState<DialogueEntry[]>([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [showTeacherResponse, setShowTeacherResponse] = useState(false);
-  const [isChunkProcessing, setIsChunkProcessing] = useState(false);
-  const [audioProcessingError, setAudioProcessingError] = useState<string | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [inputMessage, setInputMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [moduleData, setModuleData] = useState<any>(null);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [audioEnabled, setAudioEnabled] = useState(true);
   
-  // Audio chunking to fix the audio playback issues
-  const chunkText = (text: string, maxLength = 200): string[] => {
-    // If text is short enough, return it as is
-    if (text.length <= maxLength) return [text];
-    
-    // Find a good breaking point
-    let breakPoint = maxLength;
-    while (breakPoint > 0 && !['.', '!', '?', '\n'].includes(text[breakPoint])) {
-      breakPoint--;
-    }
-    
-    // If no good breaking point found, use maxLength
-    if (breakPoint === 0) breakPoint = maxLength;
-    
-    // Get first chunk and recursively process the rest
-    const firstChunk = text.substring(0, breakPoint + 1).trim();
-    const remainingText = text.substring(breakPoint + 1);
-    
-    return [firstChunk, ...chunkText(remainingText, maxLength)];
-  };
-
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const speechSynthesisRef = useRef<SpeechSynthesisUtterance | null>(null);
+  
+  const moduleId = typeof params.moduleId === 'string' ? params.moduleId : '';
+  
+  // Initialize the conversation with a welcome message
   useEffect(() => {
-    // Get module data from sessionStorage
+    // Try to get module data from session storage
     const storedModule = sessionStorage.getItem('selectedModule');
+    let moduleInfo;
+    
     if (storedModule) {
-      const parsedModule = JSON.parse(storedModule);
-      setModule(parsedModule);
-      
-      // Generate dialogue entries based on the module
-      const entries = generateDialogueEntries(parsedModule);
-      setDialogue(entries);
-    } else {
-      // Redirect if no module data is found
-      router.push('/');
-    }
-  }, [router]);
-
-  const handleNext = () => {
-    if (!showTeacherResponse) {
-      setShowTeacherResponse(true);
-    } else if (currentIndex < dialogue.length - 1) {
-      setCurrentIndex(currentIndex + 1);
-      setShowTeacherResponse(false);
-    }
-  };
-
-  const handlePrevious = () => {
-    if (showTeacherResponse) {
-      setShowTeacherResponse(false);
-    } else if (currentIndex > 0) {
-      setCurrentIndex(currentIndex - 1);
-      setShowTeacherResponse(true);
-    }
-  };
-
-  const handlePlayStudentAudio = async () => {
-    if (isChunkProcessing) return;
-    
-    // Update the current dialogue entry to show loading state
-    setDialogue(prev => {
-      const updated = [...prev];
-      updated[currentIndex] = {
-        ...updated[currentIndex],
-        studentAudioStatus: 'loading'
-      };
-      return updated;
-    });
-    
-    setIsChunkProcessing(true);
-    setAudioProcessingError(null);
-    
-    try {
-      const studentText = dialogue[currentIndex].student;
-      
-      // If we already have audio data, play it
-      if (dialogue[currentIndex].studentAudioData) {
-        const audio = new Audio(dialogue[currentIndex].studentAudioData);
-        // Use the safe play method instead of directly calling play()
-        safelyPlayAudio(audio);
-        
-        setDialogue(prev => {
-          const updated = [...prev];
-          updated[currentIndex] = {
-            ...updated[currentIndex],
-            studentAudioStatus: 'success'
-          };
-          return updated;
-        });
-        
-        setIsChunkProcessing(false);
-        return;
-      }
-      
-      // Request audio generation - explicitly use the student voice
-      const response = await fetch('/api/generate-voice', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          text: studentText,
-          useJamaicanVoice: true,
-          voiceType: 'student' // Specify that this is student voice
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to generate audio: ${response.statusText}`);
-      }
-
-      const data = await response.json();
-      
-      if (data.success && data.audioData) {
-        // Play the audio using the safe method
-        const audio = new Audio(data.audioData);
-        safelyPlayAudio(audio);
-        
-        // Store the audio data with the dialogue entry
-        setDialogue(prev => {
-          const updated = [...prev];
-          updated[currentIndex] = {
-            ...updated[currentIndex],
-            studentAudioStatus: 'success',
-            studentAudioData: data.audioData
-          };
-          return updated;
-        });
-      } else if (data.shouldUseBrowserTTS) {
-        // Fallback to browser TTS
-        const utterance = new SpeechSynthesisUtterance(studentText);
-        utterance.lang = 'en-US'; // Standard English for student
-        utterance.voice = getPreferredMaleVoice(); // Try to use a male voice
-        utterance.rate = 0.9; // Slightly slower for clarity
-        window.speechSynthesis.speak(utterance);
-        
-        setDialogue(prev => {
-          const updated = [...prev];
-          updated[currentIndex] = {
-            ...updated[currentIndex],
-            studentAudioStatus: 'success'
-          };
-          return updated;
-        });
-      } else {
-        throw new Error(data.error || 'Failed to generate audio');
-      }
-    } catch (error) {
-      console.error('Error playing student audio:', error);
-      setAudioProcessingError((error as Error).message || 'Error playing audio');
-      
-      setDialogue(prev => {
-        const updated = [...prev];
-        updated[currentIndex] = {
-          ...updated[currentIndex],
-          studentAudioStatus: 'error'
-        };
-        return updated;
-      });
-      
-      // Try browser TTS as fallback
       try {
-        const utterance = new SpeechSynthesisUtterance(dialogue[currentIndex].student);
-        utterance.lang = 'en-US'; // Standard English for student
-        utterance.voice = getPreferredMaleVoice(); // Try to use a male voice
-        window.speechSynthesis.speak(utterance);
-      } catch (ttsError) {
-        console.error('Browser TTS fallback also failed:', ttsError);
+        moduleInfo = JSON.parse(storedModule);
+        setModuleData(moduleInfo);
+      } catch (error) {
+        console.error("Failed to parse stored module data", error);
       }
-    } finally {
-      setIsChunkProcessing(false);
-    }
-  };
-
-  // Helper function to get male voice for browser TTS fallback
-  const getPreferredMaleVoice = () => {
-    if (!window.speechSynthesis) return null;
-    
-    const voices = window.speechSynthesis.getVoices();
-    
-    // First try to find an English male voice
-    const maleVoice = voices.find(voice => 
-      voice.name.toLowerCase().includes('male') && 
-      (voice.lang.startsWith('en-'))
-    );
-    
-    // Fallback to any voice that might be male
-    if (!maleVoice) {
-      return voices.find(voice => 
-        (voice.name.toLowerCase().includes('david') ||
-         voice.name.toLowerCase().includes('james') ||
-         voice.name.toLowerCase().includes('paul') ||
-         voice.name.toLowerCase().includes('tom')) && 
-        (voice.lang.startsWith('en-'))
-      ) || null;
     }
     
-    return maleVoice;
-  };
-
-  const handlePlayAudio = async () => {
-    if (isChunkProcessing) return;
+    // Add initial message
+    const initialMessage: Message = {
+      type: 'assistant',
+      content: moduleInfo 
+        ? `Welcome to the ${moduleInfo.title} module conversation! I'm your AI tutor. How can I help you learn about ${moduleInfo.title.toLowerCase()}?`
+        : `Welcome to the module conversation! I'm your AI tutor. How can I help you with your learning?`,
+      timestamp: new Date()
+    };
     
-    // Update the current dialogue entry to show loading state
-    setDialogue(prev => {
-      const updated = [...prev];
-      updated[currentIndex] = {
-        ...updated[currentIndex],
-        audioStatus: 'loading'
-      };
-      return updated;
-    });
+    setMessages([initialMessage]);
     
-    setIsChunkProcessing(true);
-    setAudioProcessingError(null);
-    
-    try {
-      const teacherText = dialogue[currentIndex].teacher;
+    // Initialize speech synthesis
+    if (typeof window !== 'undefined') {
+      speechSynthesisRef.current = new SpeechSynthesisUtterance();
+      speechSynthesisRef.current.rate = 1;
+      speechSynthesisRef.current.pitch = 1;
       
-      // If we already have audio data, play it
-      if (dialogue[currentIndex].audioData) {
-        const audio = new Audio(dialogue[currentIndex].audioData);
-        // Use the safe play method
-        safelyPlayAudio(audio);
-        
-        setDialogue(prev => {
-          const updated = [...prev];
-          updated[currentIndex] = {
-            ...updated[currentIndex],
-            audioStatus: 'success'
-          };
-          return updated;
-        });
-        
-        setIsChunkProcessing(false);
-        return;
-      }
-      
-      // Split long text for processing
-      const textChunks = chunkText(teacherText, 1000);
-      let firstChunkAudio: string | null = null;
-      
-      // Process the first chunk immediately to start playback faster
-      const firstChunkResponse = await fetch('/api/generate-voice', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          text: textChunks[0],
-          useJamaicanVoice: true,
-          voiceType: 'teacher' // Specify that this is teacher voice
-        }),
-      });
-
-      if (!firstChunkResponse.ok) {
-        throw new Error(`Failed to generate audio: ${firstChunkResponse.statusText}`);
-      }
-
-      const firstChunkData = await firstChunkResponse.json();
-      
-      if (firstChunkData.success && firstChunkData.audioData) {
-        // Play the first chunk while we process the rest
-        const audio = new Audio(firstChunkData.audioData);
-        firstChunkAudio = firstChunkData.audioData;
-        // Use the safe play method
-        safelyPlayAudio(audio);
-        
-        // Store the first chunk audio data with the dialogue entry
-        setDialogue(prev => {
-          const updated = [...prev];
-          updated[currentIndex] = {
-            ...updated[currentIndex],
-            audioStatus: 'success',
-            audioData: firstChunkData.audioData
-          };
-          return updated;
-        });
-        
-        // If we have more chunks, process them sequentially
-        if (textChunks.length > 1) {
-          console.log(`Processing ${textChunks.length - 1} additional chunks`);
-          // This can continue in the background
+      // Stop speaking when navigating away
+      return () => {
+        if (window.speechSynthesis) {
+          window.speechSynthesis.cancel();
         }
-      } else if (firstChunkData.shouldUseBrowserTTS) {
-        // Fallback to browser TTS
-        const utterance = new SpeechSynthesisUtterance(teacherText);
-        utterance.lang = 'en-JM'; // Jamaican English if available
-        utterance.rate = 0.9; // Slightly slower for clarity
-        window.speechSynthesis.speak(utterance);
-        
-        setDialogue(prev => {
-          const updated = [...prev];
-          updated[currentIndex] = {
-            ...updated[currentIndex],
-            audioStatus: 'success'
-          };
-          return updated;
-        });
-      } else {
-        throw new Error(firstChunkData.error || 'Failed to generate audio');
-      }
-    } catch (error) {
-      console.error('Error playing audio:', error);
-      setAudioProcessingError((error as Error).message || 'Error playing audio');
+      };
+    }
+  }, []);
+  
+  // Scroll to bottom when messages change
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+  
+  const generateResponse = (userMessage: string): string => {
+    // Simple response generation based on the module
+    if (!moduleId) return "I'm not sure which module you're asking about. Could you be more specific?";
+    
+    // Check if we have specific responses for this module
+    const moduleResponses = mockResponses[moduleId] || [];
+    
+    // Create a combined pool of responses
+    const possibleResponses = [...moduleResponses, ...genericResponses];
+    
+    // Pick a random response from the pool
+    return possibleResponses[Math.floor(Math.random() * possibleResponses.length)];
+  };
+  
+  const handleSendMessage = async () => {
+    if (inputMessage.trim() === '') return;
+    
+    // Add user message
+    const userMessage: Message = {
+      type: 'user',
+      content: inputMessage,
+      timestamp: new Date()
+    };
+    
+    setMessages(prev => [...prev, userMessage]);
+    setInputMessage('');
+    setIsLoading(true);
+    
+    // Simulate AI processing time
+    setTimeout(() => {
+      const aiResponse = generateResponse(userMessage.content);
       
-      setDialogue(prev => {
-        const updated = [...prev];
-        updated[currentIndex] = {
-          ...updated[currentIndex],
-          audioStatus: 'error'
-        };
-        return updated;
-      });
-    } finally {
-      setIsChunkProcessing(false);
+      const assistantMessage: Message = {
+        type: 'assistant',
+        content: aiResponse,
+        timestamp: new Date()
+      };
+      
+      setMessages(prev => [...prev, assistantMessage]);
+      setIsLoading(false);
+      
+      // Speak the response if audio is enabled
+      if (audioEnabled) {
+        speakText(aiResponse);
+      }
+    }, 1000 + Math.random() * 1000); // Random delay between 1-2 seconds
+  };
+  
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
     }
   };
-
-  if (!module) {
-    return <div className="container mx-auto py-8">Loading...</div>;
-  }
-
+  
+  // Speech synthesis functions
+  const speakText = (text: string) => {
+    if (!speechSynthesisRef.current || !window.speechSynthesis) return;
+    
+    // Cancel any ongoing speech
+    window.speechSynthesis.cancel();
+    
+    // Set the text to speak
+    speechSynthesisRef.current.text = text;
+    
+    // Start speaking
+    window.speechSynthesis.speak(speechSynthesisRef.current);
+    setIsSpeaking(true);
+    
+    // Update state when speech ends
+    speechSynthesisRef.current.onend = () => {
+      setIsSpeaking(false);
+    };
+  };
+  
+  const toggleSpeech = () => {
+    if (isSpeaking) {
+      window.speechSynthesis?.cancel();
+      setIsSpeaking(false);
+    } else {
+      // Find the last AI message and speak it
+      const lastAiMessage = [...messages].reverse().find(m => m.type === 'assistant');
+      if (lastAiMessage) {
+        speakText(lastAiMessage.content);
+      }
+    }
+  };
+  
+  const toggleAudio = () => {
+    setAudioEnabled(!audioEnabled);
+    if (isSpeaking && !audioEnabled) {
+      window.speechSynthesis?.cancel();
+      setIsSpeaking(false);
+    }
+  };
+  
+  const toggleListening = () => {
+    // This would normally connect to the Web Speech API
+    // For now, we'll just toggle the state
+    setIsListening(!isListening);
+    
+    // Mock implementation - in a real app, this would use the SpeechRecognition API
+    if (!isListening) {
+      // Start listening
+      setTimeout(() => {
+        setIsListening(false);
+        setInputMessage("Can you explain this topic in simpler terms?");
+      }, 3000);
+    }
+  };
+  
   return (
-    <div className="container mx-auto py-8 px-4">
-      <div className="mb-6">
-        <Link href="/" className="flex items-center text-sm font-medium text-muted-foreground hover:text-primary">
-          <ArrowLeftIcon className="mr-2 h-4 w-4" />
-          Back to Modules
-        </Link>
-      </div>
-      
-      <h1 className="text-3xl font-bold mb-2 text-center">{module.title}</h1>
-      <p className="text-center mb-8 text-muted-foreground max-w-2xl mx-auto">
-        {module.description}
-      </p>
-
-      <Card className="w-full max-w-4xl mx-auto mb-8">
-        <CardHeader>
-          <CardTitle>Interactive Module Conversation</CardTitle>
-          <CardDescription>
-            Learn about the {module.title} through an interactive dialogue in Jamaican Creole.
-            Question {currentIndex + 1} of {dialogue.length}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="bg-muted p-4 rounded-lg">
-            <div className="flex justify-between items-start mb-2">
-              <h3 className="text-lg font-semibold">Student:</h3>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={handlePlayStudentAudio}
-                disabled={isChunkProcessing || dialogue[currentIndex]?.studentAudioStatus === 'loading'}
-                className="flex items-center gap-2"
-              >
-                {dialogue[currentIndex]?.studentAudioStatus === 'loading' ? (
-                  <>
-                    <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    <span>Loading...</span>
-                  </>
-                ) : (
-                  <>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                    </svg>
-                    <span>Play Audio</span>
-                  </>
-                )}
-              </Button>
-            </div>
-            <p>{dialogue[currentIndex]?.student}</p>
-          </div>
-
-          {showTeacherResponse && (
-            <div className="bg-primary/10 p-4 rounded-lg relative">
-              <div className="flex justify-between items-start mb-2">
-                <h3 className="text-lg font-semibold">Teacher:</h3>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={handlePlayAudio}
-                  disabled={isChunkProcessing || dialogue[currentIndex]?.audioStatus === 'loading'}
-                  className="flex items-center gap-2"
-                >
-                  {dialogue[currentIndex]?.audioStatus === 'loading' ? (
-                    <>
-                      <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      <span>Loading...</span>
-                    </>
-                  ) : (
-                    <>
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                      </svg>
-                      <span>Play Audio</span>
-                    </>
-                  )}
-                </Button>
+    <div className="min-h-screen bg-gray-900 text-gray-100 flex flex-col">
+      {/* Header */}
+      <header className="border-b border-gray-800 p-4">
+        <div className="max-w-5xl mx-auto flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <Link 
+              href={`/learning-lab/module/${moduleId}`}
+              className="flex items-center text-gray-400 hover:text-white transition"
+            >
+              <ArrowLeft className="h-5 w-5 mr-2" />
+              Back to Module
+            </Link>
+            
+            {moduleData && (
+              <div className="hidden md:block">
+                <h1 className="text-xl font-bold">{moduleData.title} - AI Tutor Chat</h1>
               </div>
-              <p className="whitespace-pre-line">{dialogue[currentIndex]?.teacher}</p>
+            )}
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={toggleAudio}
+              className={`rounded-full ${!audioEnabled ? 'text-gray-500' : 'text-blue-500'}`}
+            >
+              {audioEnabled ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}
+            </Button>
+            
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={toggleSpeech}
+              className={`rounded-full ${isSpeaking ? 'text-blue-500 bg-blue-900/30' : 'text-gray-300'}`}
+              disabled={!audioEnabled}
+            >
+              <Volume2 className="h-5 w-5" />
+            </Button>
+          </div>
+        </div>
+      </header>
+      
+      {/* Chat Area */}
+      <div className="flex-1 overflow-hidden">
+        <div className="max-w-5xl mx-auto h-full flex flex-col">
+          <ScrollArea className="flex-1 p-4">
+            <div className="space-y-4">
+              {messages.map((message, index) => (
+                <div 
+                  key={index} 
+                  className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
+                >
+                  <div className={`flex max-w-[80%] ${message.type === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
+                    <Avatar className={`h-8 w-8 ${message.type === 'user' ? 'ml-2' : 'mr-2'}`}>
+                      {message.type === 'assistant' ? (
+                        <>
+                          <AvatarFallback className="bg-blue-600">AI</AvatarFallback>
+                          <AvatarImage src="/images/ai-avatar.png" />
+                        </>
+                      ) : (
+                        <>
+                          <AvatarFallback className="bg-purple-600">U</AvatarFallback>
+                          <AvatarImage src="/images/user-avatar.png" />
+                        </>
+                      )}
+                    </Avatar>
+                    
+                    <Card className={`
+                      ${message.type === 'user' 
+                        ? 'bg-purple-600 border-purple-500' 
+                        : 'bg-blue-600 border-blue-500'}
+                      mb-2
+                    `}>
+                      <CardContent className="p-3">
+                        <p className="text-white">{message.content}</p>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
+              ))}
               
-              {audioProcessingError && (
-                <div className="mt-4 p-3 bg-red-100 text-red-800 rounded-md text-sm">
-                  <p className="font-semibold">Audio Error:</p>
-                  <p>{audioProcessingError}</p>
-                  <p className="mt-2">The audio is being processed in smaller chunks to improve reliability. 
-                  You may experience delays or need to click Play Audio multiple times for longer responses.</p>
+              {isLoading && (
+                <div className="flex justify-start">
+                  <div className="flex flex-row">
+                    <Avatar className="h-8 w-8 mr-2">
+                      <AvatarFallback className="bg-blue-600">AI</AvatarFallback>
+                      <AvatarImage src="/images/ai-avatar.png" />
+                    </Avatar>
+                    
+                    <Card className="bg-blue-600 border-blue-500 mb-2">
+                      <CardContent className="p-3">
+                        <div className="flex space-x-2">
+                          <div className="w-2 h-2 rounded-full bg-blue-200 animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                          <div className="w-2 h-2 rounded-full bg-blue-200 animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                          <div className="w-2 h-2 rounded-full bg-blue-200 animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
                 </div>
               )}
+              
+              {/* Invisible element to scroll to */}
+              <div ref={messagesEndRef} />
             </div>
-          )}
-        </CardContent>
-        <CardFooter className="flex justify-between">
-          <Button 
-            variant="outline" 
-            onClick={handlePrevious}
-            disabled={currentIndex === 0 && !showTeacherResponse}
-          >
-            Previous
-          </Button>
-          <Button onClick={handleNext}>
-            {!showTeacherResponse ? 'Show Answer' : currentIndex < dialogue.length - 1 ? 'Next Question' : 'Finish'}
-            {!showTeacherResponse && (
-              <svg 
-                xmlns="http://www.w3.org/2000/svg" 
-                width="16" 
-                height="16" 
-                viewBox="0 0 24 24" 
-                fill="none" 
-                stroke="currentColor" 
-                strokeWidth="2" 
-                strokeLinecap="round" 
-                strokeLinejoin="round" 
-                className="ml-2"
-              >
-                <polyline points="9 18 15 12 9 6"></polyline>
-              </svg>
-            )}
-          </Button>
-        </CardFooter>
-      </Card>
-
-      <div className="w-full max-w-4xl mx-auto">
-        <h2 className="text-2xl font-bold mb-4">About this Module</h2>
-        <div className="bg-card p-5 rounded-lg shadow-sm border">
-          <h3 className="text-xl font-semibold mb-3">Module Overview</h3>
-          <p className="mb-3">
-            {module.description}
-          </p>
+          </ScrollArea>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-            <div>
-              <h3 className="text-lg font-semibold mb-2">Topics</h3>
-              <ul className="list-disc pl-5 space-y-1">
-                {module.topics.map((topic, i) => (
-                  <li key={i}>{topic.title}</li>
-                ))}
-              </ul>
-            </div>
-            
-            <div>
-              <h3 className="text-lg font-semibold mb-2">Learning Tools</h3>
-              <ul className="list-disc pl-5 space-y-1">
-                {module.learningTools?.games && module.learningTools.games.length > 0 && (
-                  <li>{module.learningTools.games.length} quizzes available</li>
+          {/* Message Input */}
+          <div className="p-4 border-t border-gray-800">
+            <div className="max-w-5xl mx-auto flex items-center space-x-2">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="rounded-full text-gray-400 hover:text-white hover:bg-gray-800"
+                onClick={toggleListening}
+              >
+                {isListening ? (
+                  <Mic className="h-5 w-5 text-green-500" />
+                ) : (
+                  <MicOff className="h-5 w-5" />
                 )}
-                {module.learningTools?.flashcards && module.learningTools.flashcards.length > 0 && (
-                  <li>{module.learningTools.flashcards.length} flashcards for study</li>
-                )}
-                {module.learningTools?.questionBank && module.learningTools.questionBank.length > 0 && (
-                  <li>{module.learningTools.questionBank.length} practice questions</li>
-                )}
-              </ul>
+              </Button>
+              
+              <div className="flex-1 relative">
+                <Input
+                  value={inputMessage}
+                  onChange={(e) => setInputMessage(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Ask your question..."
+                  className="bg-gray-800 border-gray-700 text-white"
+                />
+              </div>
+              
+              <Button 
+                onClick={handleSendMessage}
+                disabled={inputMessage.trim() === '' || isLoading}
+                className={`rounded-full ${
+                  inputMessage.trim() === '' || isLoading 
+                    ? 'bg-gray-700 text-gray-400' 
+                    : 'bg-blue-600 hover:bg-blue-700 text-white'
+                }`}
+              >
+                <Send className="h-5 w-5" />
+              </Button>
             </div>
           </div>
-          
-          <h3 className="text-xl font-semibold mt-6 mb-3">Voice Interaction</h3>
-          <p className="text-muted-foreground">
-            This interactive voice conversation uses Eleven Labs technology with Jamaican Creole speech to:
-          </p>
-          <ul className="list-disc pl-5 mt-2 space-y-1 text-muted-foreground">
-            <li>Explain module concepts in culturally relevant language</li>
-            <li>Break down complex topics in an engaging way</li>
-            <li>Help you understand key terms and their relationships</li>
-            <li>Guide you through available learning resources</li>
-            <li>Provide a more immersive learning experience</li>
-          </ul>
         </div>
       </div>
     </div>

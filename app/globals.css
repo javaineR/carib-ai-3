@@ -10,20 +10,20 @@
     --card-foreground: 240 10% 3.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 240 10% 3.9%;
-    --primary: 240 5.9% 10%;
+    --primary: 300 100% 50%;
     --primary-foreground: 0 0% 98%;
-    --secondary: 240 4.8% 95.9%;
+    --secondary: 160 100% 50%;
     --secondary-foreground: 240 5.9% 10%;
     --muted: 240 4.8% 95.9%;
     --muted-foreground: 240 3.8% 46.1%;
-    --accent: 240 4.8% 95.9%;
+    --accent: 340 100% 60%;
     --accent-foreground: 240 5.9% 10%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
     --border: 240 5.9% 90%;
     --input: 240 5.9% 90%;
     --ring: 240 5.9% 10%;
-    --radius: 0.5rem;
+    --radius: 0.75rem;
   }
 
   .dark {
@@ -33,13 +33,13 @@
     --card-foreground: 0 0% 98%;
     --popover: 240 10% 3.9%;
     --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
+    --primary: 300 100% 50%;
     --primary-foreground: 240 5.9% 10%;
-    --secondary: 240 3.7% 15.9%;
+    --secondary: 160 100% 50%;
     --secondary-foreground: 0 0% 98%;
     --muted: 240 3.7% 15.9%;
     --muted-foreground: 240 5% 64.9%;
-    --accent: 240 3.7% 15.9%;
+    --accent: 340 100% 60%;
     --accent-foreground: 0 0% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
@@ -75,6 +75,48 @@
     );
     backdrop-filter: blur(2px);
   }
+
+  /* Colorful card styles */
+  .card-gradient-purple {
+    @apply bg-gradient-to-br from-purple-500/90 to-indigo-700/90 backdrop-blur-sm border-purple-400/30 shadow-[0_0_15px_rgba(139,92,246,0.5)];
+  }
+  
+  .card-gradient-blue {
+    @apply bg-gradient-to-br from-blue-500/90 to-cyan-700/90 backdrop-blur-sm border-blue-400/30 shadow-[0_0_15px_rgba(59,130,246,0.5)];
+  }
+  
+  .card-gradient-green {
+    @apply bg-gradient-to-br from-green-500/90 to-emerald-700/90 backdrop-blur-sm border-green-400/30 shadow-[0_0_15px_rgba(16,185,129,0.5)];
+  }
+  
+  .card-gradient-pink {
+    @apply bg-gradient-to-br from-pink-500/90 to-rose-700/90 backdrop-blur-sm border-pink-400/30 shadow-[0_0_15px_rgba(219,39,119,0.5)];
+  }
+  
+  .card-gradient-yellow {
+    @apply bg-gradient-to-br from-yellow-500/90 to-amber-700/90 backdrop-blur-sm border-yellow-400/30 shadow-[0_0_15px_rgba(245,158,11,0.5)];
+  }
+
+  /* Button gradient styles */
+  .btn-gradient-purple {
+    @apply bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white shadow-lg;
+  }
+  
+  .btn-gradient-blue {
+    @apply bg-gradient-to-r from-blue-500 to-cyan-600 hover:from-blue-600 hover:to-cyan-700 text-white shadow-lg;
+  }
+  
+  .btn-gradient-green {
+    @apply bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white shadow-lg;
+  }
+  
+  .btn-gradient-pink {
+    @apply bg-gradient-to-r from-pink-500 to-rose-600 hover:from-pink-600 hover:to-rose-700 text-white shadow-lg;
+  }
+  
+  .btn-gradient-yellow {
+    @apply bg-gradient-to-r from-yellow-500 to-amber-600 hover:from-yellow-600 hover:to-amber-700 text-white shadow-lg;
+  }
 }
 
 @layer base {
@@ -101,8 +143,55 @@
   }
 }
 
+@keyframes float {
+  0% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  33% {
+    transform: translateY(-10px) rotate(5deg);
+  }
+  66% {
+    transform: translateY(5px) rotate(-5deg);
+  }
+  100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+}
+
 .animate-blob {
   animation: blob 7s infinite;
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+@keyframes sparkle {
+  0%, 100% { 
+    opacity: 0.2;
+    transform: scale(0.8);
+  }
+  50% { 
+    opacity: 1;
+    transform: scale(1.2);
+  }
+}
+
+.animate-sparkle {
+  animation: sparkle 2s ease-in-out infinite;
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.animate-bounce-slow {
+  animation: bounce 3s ease-in-out infinite;
 }
 
 @keyframes fadeIn {
@@ -177,6 +266,23 @@
   transform: translateY(-5px);
 }
 
+/* Playful hover effects */
+.hover-scale {
+  transition: transform 0.3s ease;
+}
+
+.hover-scale:hover {
+  transform: scale(1.05);
+}
+
+.hover-rotate {
+  transition: transform 0.3s ease;
+}
+
+.hover-rotate:hover {
+  transform: rotate(3deg);
+}
+
 /* Page transitions */
 .page-enter {
   opacity: 0;
@@ -194,5 +300,26 @@
 .page-exit-active {
   opacity: 0;
   transition: opacity 300ms;
+}
+
+/* Colorful border glows */
+.border-glow-purple {
+  box-shadow: 0 0 15px 2px rgba(139, 92, 246, 0.6);
+}
+
+.border-glow-blue {
+  box-shadow: 0 0 15px 2px rgba(59, 130, 246, 0.6);
+}
+
+.border-glow-pink {
+  box-shadow: 0 0 15px 2px rgba(219, 39, 119, 0.6);
+}
+
+.border-glow-green {
+  box-shadow: 0 0 15px 2px rgba(16, 185, 129, 0.6);
+}
+
+.border-glow-yellow {
+  box-shadow: 0 0 15px 2px rgba(245, 158, 11, 0.6);
 }
 
